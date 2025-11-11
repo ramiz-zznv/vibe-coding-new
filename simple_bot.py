@@ -36,10 +36,15 @@ def get_google_calendar_service():
         creds = None
         
         # Проверяем наличие файла credentials
-        if not os.path.exists(GOOGLE_CREDENTIALS_FILE):
-            print(f"❌ Файл {GOOGLE_CREDENTIALS_FILE} не найден!")
-            return None
-        
+        if os.getenv("GOOGLE_CREDENTIALS_JSON"):
+    creds_data = json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
+    with open("credentials.json", "w") as f:
+        json.dump(creds_data, f)
+    print("✅ credentials.json создан из переменной окружения")
+elif not os.path.exists(GOOGLE_CREDENTIALS_FILE):
+    print(f"❌ Файл {GOOGLE_CREDENTIALS_FILE} не найден!")
+    return None
+
         print(f"✅ Файл {GOOGLE_CREDENTIALS_FILE} найден")
         
         # Файл token.json хранит токены доступа пользователя
@@ -466,4 +471,32 @@ if __name__ == "__main__":
         print(f"ℹ️ Google Calendar не настроен (файл {GOOGLE_CREDENTIALS_FILE} не найден)")
     
     print("✅ Бот запущен! Ctrl+C для остановки")
-    bot.polling()
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route("/", methods=["GET", "POST"])
+def webhook():
+    if request.method == "POST":
+        update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
+        bot.process_new_updates([update])
+        return "OK", 200
+    else:
+        return "Bot is running!", 200
+
+if __name__ == "__main__":
+    import os
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+    init_db()
+    print("✅ База данных готова")
+
+    # Настройка Webhook
+    TOKEN = os.getenv("TELEGRAM_TOKEN")
+    RENDER_URL = os.getenv("RENDER_URL")  # например https://vibe-bot.onrender.com
+    bot.remove_webhook()
+    bot.set_webhook(url=f"{RENDER_URL}")
+
+    print(f"🌐 Webhook установлен: {RENDER_URL}")
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
