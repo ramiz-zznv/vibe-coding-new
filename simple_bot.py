@@ -35,11 +35,15 @@ def get_google_calendar_service():
         SCOPES = ['https://www.googleapis.com/auth/calendar']
         creds = None
         
-        # Проверяем наличие файла credentials
-        if os.getenv("GOOGLE_CREDENTIALS_JSON"):
+      
+# Если GOOGLE_CREDENTIALS_JSON передан как переменная окружения (например, в Render)
+if os.getenv("GOOGLE_CREDENTIALS_JSON"):
     creds_data = json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
     with open("credentials.json", "w") as f:
         json.dump(creds_data, f)
+    print("✅ credentials.json создан из переменной окружения")
+else:
+    print("⚠️ GOOGLE_CREDENTIALS_JSON не найден, используем локальный файл (если есть)")
     print("✅ credentials.json создан из переменной окружения")
 elif not os.path.exists(GOOGLE_CREDENTIALS_FILE):
     print(f"❌ Файл {GOOGLE_CREDENTIALS_FILE} не найден!")
